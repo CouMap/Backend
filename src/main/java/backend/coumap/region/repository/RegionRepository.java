@@ -1,4 +1,7 @@
 package backend.coumap.region.repository;
 
-public class RegionRepository {
+import backend.coumap.region.domain.Region;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface RegionRepository extends JpaRepository<Region, Long> {
 }

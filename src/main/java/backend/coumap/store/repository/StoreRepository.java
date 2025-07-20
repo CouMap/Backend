@@ -1,4 +1,7 @@
 package backend.coumap.store.repository;
 
-public class StoreRepository {
+import backend.coumap.store.domain.Store;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface StoreRepository extends JpaRepository<Store, Long> {
 }
