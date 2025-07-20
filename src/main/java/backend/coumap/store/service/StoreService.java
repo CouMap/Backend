@@ -20,34 +20,47 @@ public class StoreService {
     private final RegionRepository regionRepository;
 
     /**
-     * 모든 가맹점 목록 조회
-     */
-    public List<StoreResponse> getAllStores() {
-        return storeRepository.findAll()
-                .stream()
-                .map(StoreResponse::fromEntity)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * 새로운 가맹점 등록
+     * 가맹점 등록
      */
     public StoreResponse createStore(StoreRequest request) {
         Region region = regionRepository.findById(request.getRegionId())
-                .orElseThrow(() -> new IllegalArgumentException("해당 지역이 존재하지 않습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("해당 지역이 존재하지 않습니다. ID=" + request.getRegionId()));
 
         Store store = Store.builder()
                 .name(request.getName())
+                .category(request.getCategory())
+                .region(region)
                 .address(request.getAddress())
                 .latitude(request.getLatitude())
                 .longitude(request.getLongitude())
-                .category(request.getCategory())
-                .isFranchise(request.getIsFranchise())
-                .annualSales(request.getAnnualSales())
-                .region(region)
+                .isFranchise(request.getIsFranchise() != null ? request.getIsFranchise() : false) // ✅ 추가
+                .annualSales(request.getAnnualSales())                                           // ✅ 추가
+                .businessDays(request.getBusinessDays())                                         // ✅ 추가
+                .openingHours(request.getOpeningHours())                                         // ✅ 추가
                 .build();
 
-        Store savedStore = storeRepository.save(store);
-        return StoreResponse.fromEntity(savedStore);
+        Store saved = storeRepository.save(store);
+        return StoreResponse.fromEntity(saved);
+    }
+
+    /**
+     * 가맹점 전체 조회 (필터링 지원)
+     */
+    public List<StoreResponse> getStores(Long regionId, String category) {
+        List<Store> stores;
+
+        if (regionId != null && category != null) {
+            stores = storeRepository.findByRegionIdAndCategory(regionId, category);
+        } else if (regionId != null) {
+            stores = storeRepository.findByRegionId(regionId);
+        } else if (category != null) {
+            stores = storeRepository.findByCategory(category);
+        } else {
+            stores = storeRepository.findAll();
+        }
+
+        return stores.stream()
+                .map(StoreResponse::fromEntity)
+                .collect(Collectors.toList());
     }
 }

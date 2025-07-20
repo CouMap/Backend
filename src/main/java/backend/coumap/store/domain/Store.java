@@ -16,19 +16,18 @@ public class Store {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String name;         // 가맹점명
-
-    @Column(nullable = false)
-    private String address;      // 주소
-
-    private Double latitude;     // 위도
-    private Double longitude;    // 경도
-    private String category;     // 업종
-    private Boolean isFranchise; // 프랜차이즈 여부
-    private Long annualSales;    // 연 매출
+    private String address;
+    private Long annualSales;
+    private String category;
+    private Boolean isFranchise;
+    private Double latitude;
+    private Double longitude;
+    private String name;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "region_id")
-    private Region region;       // 지역 연관관계
+    @JoinColumn(name = "region_id", nullable = false)
+    private Region region;
+
+    private String openingHours;
+    private String businessDays;
 }
