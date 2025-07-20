@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: jdbc:mariadb://db:3306/coumap
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.mariadb.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+server:
+  port: 8080
