@@ -16,18 +16,21 @@ public class StoreController {
     private final StoreService storeService;
 
     /**
-     * 모든 가맹점 목록 조회
-     */
-    @GetMapping
-    public List<StoreResponse> getAllStores() {
-        return storeService.getAllStores();
-    }
-
-    /**
-     * 새로운 가맹점 추가
+     * 가맹점 등록
      */
     @PostMapping
     public StoreResponse addStore(@RequestBody StoreRequest request) {
         return storeService.createStore(request);
+    }
+
+    /**
+     * 가맹점 전체 조회
+     */
+    @GetMapping
+    public List<StoreResponse> getAllStores(
+            @RequestParam(required = false) Long regionId,
+            @RequestParam(required = false) String category
+    ) {
+        return storeService.getStores(regionId, category);
     }
 }

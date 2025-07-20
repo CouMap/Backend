@@ -7,11 +7,13 @@ import lombok.Setter;
 @Setter
 public class StoreRequest {
     private String name;
+    private String category;
+    private Long regionId;
     private String address;
     private Double latitude;
     private Double longitude;
-    private String category;
     private Boolean isFranchise;
     private Long annualSales;
-    private Long regionId; // 외래키
+    private String businessDays;
+    private String openingHours;
 }
