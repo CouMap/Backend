@@ -18,7 +18,13 @@ public class Region {
     private Long id;
 
     @Column(nullable = false)
-    private String name;
+    private String province; // 시/도
+
+    @Column(nullable = false)
+    private String city;     // 시/군/구
+
+    @Column(nullable = true)
+    private String town;     // 읍/면/동
 
     @Column(unique = true, nullable = false)
     private String code;  // 행정코드
