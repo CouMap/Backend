@@ -27,17 +27,18 @@ public class StoreController {
      * 가맹점 전체 조회
      */
     @GetMapping
-    public List<StoreResponse> getAllStores(
+    public List<StoreResponse> getStores(
             @RequestParam(required = false) Long regionId,
-            @RequestParam(required = false) String category
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String name
     ) {
-        return storeService.getAllStores(regionId, category);
+        return storeService.getStores(regionId, category, name);
     }
 
     /**
      * 가맹점 상세 조회
      */
-    @GetMapping("/{id:[0-9]+}")
+    @GetMapping("/{id}")
     public StoreResponse getStoreById(@PathVariable Long id) {
         return storeService.getStoreById(id);
     }
@@ -53,4 +54,14 @@ public class StoreController {
     ) {
         return storeService.getNearbyStores(lat, lng, radius);
     }
+
+
+    /**
+     * 영업중 가맹점 조회
+     */
+    @GetMapping("/open")
+    public List<StoreResponse> getOpenStores(@RequestParam Long regionId) {
+        return storeService.getOpenStores(regionId);
+    }
+
 }
