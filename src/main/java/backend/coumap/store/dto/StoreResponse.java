@@ -20,7 +20,6 @@ public class StoreResponse {
     private String businessDays;
     private String openingHours;
 
-
     public static StoreResponse fromEntity(Store store) {
         return StoreResponse.builder()
                 .id(store.getId())

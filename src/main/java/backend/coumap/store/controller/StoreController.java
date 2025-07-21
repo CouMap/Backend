@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/stores")
+@RequestMapping("/stores")
 @RequiredArgsConstructor
 public class StoreController {
 
@@ -31,6 +31,26 @@ public class StoreController {
             @RequestParam(required = false) Long regionId,
             @RequestParam(required = false) String category
     ) {
-        return storeService.getStores(regionId, category);
+        return storeService.getAllStores(regionId, category);
+    }
+
+    /**
+     * 가맹점 상세 조회
+     */
+    @GetMapping("/{id:[0-9]+}")
+    public StoreResponse getStoreById(@PathVariable Long id) {
+        return storeService.getStoreById(id);
+    }
+
+    /**
+     * 근처 가맹점 조회
+     */
+    @GetMapping("/nearby")
+    public List<StoreResponse> getNearbyStores(
+            @RequestParam double lat,
+            @RequestParam double lng,
+            @RequestParam(defaultValue = "500") double radius
+    ) {
+        return storeService.getNearbyStores(lat, lng, radius);
     }
 }
