@@ -7,14 +7,20 @@ import backend.coumap.store.dto.StoreRequest;
 import backend.coumap.store.dto.StoreResponse;
 import backend.coumap.store.repository.StoreRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class StoreService {
+
+    private static final double EARTH_RADIUS_METERS = 6371e3;
 
     private final StoreRepository storeRepository;
     private final RegionRepository regionRepository;
@@ -23,6 +29,10 @@ public class StoreService {
      * 가맹점 등록
      */
     public StoreResponse createStore(StoreRequest request) {
+        if (storeRepository.existsByNameAndAddressAndRegionId(
+                request.getName(), request.getAddress(), request.getRegionId())) {
+            throw new IllegalArgumentException("이미 존재하는 가맹점입니다.");
+        }
         Region region = regionRepository.findById(request.getRegionId())
                 .orElseThrow(() -> new IllegalArgumentException("해당 지역이 존재하지 않습니다. ID=" + request.getRegionId()));
 
@@ -33,7 +43,7 @@ public class StoreService {
                 .address(request.getAddress())
                 .latitude(request.getLatitude())
                 .longitude(request.getLongitude())
-                .isFranchise(request.getIsFranchise() != null ? request.getIsFranchise() : false)
+                .isFranchise(request.getIsFranchise())
                 .annualSales(request.getAnnualSales())
                 .businessDays(request.getBusinessDays())
                 .openingHours(request.getOpeningHours())
@@ -46,11 +56,19 @@ public class StoreService {
     /**
      * 가맹점 전체 조회 (필터링 지원)
      */
-    public List<StoreResponse> getAllStores(Long regionId, String category) {
+    public List<StoreResponse> getStores(Long regionId, String category, String name) {
         List<Store> stores;
 
-        if (regionId != null && category != null) {
+        if (regionId != null && category != null && name != null) {
+            stores = storeRepository.findByRegionIdAndCategoryAndNameContaining(regionId, category, name);
+        } else if (regionId != null && category != null) {
             stores = storeRepository.findByRegionIdAndCategory(regionId, category);
+        } else if (regionId != null && name != null) {
+            stores = storeRepository.findByRegionIdAndNameContaining(regionId, name);
+        } else if (category != null && name != null) {
+            stores = storeRepository.findByCategoryAndNameContaining(category, name);
+        } else if (name != null) {
+            stores = storeRepository.findByNameContaining(name);
         } else if (regionId != null) {
             stores = storeRepository.findByRegionId(regionId);
         } else if (category != null) {
@@ -79,13 +97,19 @@ public class StoreService {
     public List<StoreResponse> getNearbyStores(double lat, double lng, double radius) {
         List<Store> stores = storeRepository.findAll();
         return stores.stream()
-                .filter(s -> distance(lat, lng, s.getLatitude(), s.getLongitude()) <= radius)
+                .filter(store -> {
+                    // null 체크 추가
+                    if (store.getLatitude() == null || store.getLongitude() == null) {
+                        log.warn("Store ID {} has null coordinates", store.getId());
+                        return false;
+                    }
+                    return distance(lat, lng, store.getLatitude(), store.getLongitude()) <= radius;
+                })
                 .map(StoreResponse::fromEntity)
                 .collect(Collectors.toList());
     }
 
     private double distance(double lat1, double lon1, double lat2, double lon2) {
-        double R = 6371e3;
         double φ1 = Math.toRadians(lat1);
         double φ2 = Math.toRadians(lat2);
         double Δφ = Math.toRadians(lat2 - lat1);
@@ -95,6 +119,51 @@ public class StoreService {
                 Math.cos(φ1) * Math.cos(φ2) *
                         Math.sin(Δλ/2) * Math.sin(Δλ/2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return R * c;
+        return EARTH_RADIUS_METERS * c;
+    }
+
+    /**
+     * 가맹점 영업 상태 조회
+     */
+    public List<StoreResponse> getOpenStores(Long regionId) {
+        List<Store> stores = storeRepository.findByRegionId(regionId);
+        LocalTime now = LocalTime.now();
+
+        return stores.stream()
+                .filter(store -> isOpen(store.getOpeningHours(), now))
+                .map(StoreResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    private boolean isOpen(String openingHours, LocalTime now) {
+        if (openingHours == null || openingHours.trim().isEmpty()) {
+            return false;
+        }
+
+        try {
+            // "09:00~18:00" 형식 파싱
+            if (!openingHours.contains("~")) {
+                return false;
+            }
+
+            String[] parts = openingHours.trim().split("~");
+            if (parts.length != 2) {
+                return false;
+            }
+
+            LocalTime start = LocalTime.parse(parts[0].trim());
+            LocalTime end = LocalTime.parse(parts[1].trim());
+
+            // 자정을 넘는 경우 (예: 22:00~02:00)
+            if (end.isBefore(start)) {
+                return !now.isBefore(start) || !now.isAfter(end);
+            }
+
+            return !now.isBefore(start) && !now.isAfter(end);
+
+        } catch (DateTimeParseException e) {
+            log.warn("Invalid opening hours format: {}", openingHours);
+            return false;
+        }
     }
 }
