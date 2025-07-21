@@ -1,5 +1,6 @@
 package backend.coumap.store.domain;
 
+import backend.coumap.category.domain.Category;
 import backend.coumap.region.domain.Region;
 import jakarta.persistence.*;
 import lombok.*;
@@ -18,7 +19,11 @@ public class Store {
 
     private String address;
     private Long annualSales;
-    private String category;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
+
     private Boolean isFranchise;
     private Double latitude;
     private Double longitude;

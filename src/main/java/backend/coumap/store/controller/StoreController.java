@@ -25,17 +25,17 @@ public class StoreController {
     }
 
     /**
-     * 가맹점 전체 조회
+     * 가맹점 전체 조회 - categoryId로 파라미터 변경
      */
     @GetMapping
     public List<StoreResponse> getAllStores(
             @RequestParam(required = false) Long regionId,
-            @RequestParam(required = false) String category,
+            @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) Double latitude,
             @RequestParam(required = false) Double longitude
     ) {
-        return storeService.getStores(regionId, category, name, latitude, longitude);
+        return storeService.getStores(regionId, categoryId, name, latitude, longitude);
     }
 
     /**
@@ -63,5 +63,4 @@ public class StoreController {
     public List<StoreResponse> getOpenStores(@RequestParam Long regionId) {
         return storeService.getOpenStores(regionId);
     }
-
 }

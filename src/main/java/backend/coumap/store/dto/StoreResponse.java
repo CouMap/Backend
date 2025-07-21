@@ -1,5 +1,6 @@
 package backend.coumap.store.dto;
 
+import backend.coumap.category.dto.CategoryResponse;
 import backend.coumap.region.dto.RegionResponse;
 import backend.coumap.store.domain.Store;
 import lombok.Builder;
@@ -10,7 +11,7 @@ import lombok.Getter;
 public class StoreResponse {
     private Long id;
     private String name;
-    private String category;
+    private CategoryResponse category;  // String -> CategoryResponse로 변경
     private RegionResponse region;
     private String address;
     private Double latitude;
@@ -25,7 +26,7 @@ public class StoreResponse {
         return StoreResponse.builder()
                 .id(store.getId())
                 .name(store.getName())
-                .category(store.getCategory())
+                .category(CategoryResponse.fromEntity(store.getCategory()))
                 .region(RegionResponse.fromEntity(store.getRegion()))
                 .address(store.getAddress())
                 .latitude(store.getLatitude())

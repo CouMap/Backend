@@ -1,5 +1,7 @@
 package backend.coumap.store.service;
 
+import backend.coumap.category.domain.Category;
+import backend.coumap.category.repository.CategoryRepository;
 import backend.coumap.region.domain.Region;
 import backend.coumap.region.repository.RegionRepository;
 import backend.coumap.store.domain.Store;
@@ -26,6 +28,7 @@ public class StoreService {
 
     private final StoreRepository storeRepository;
     private final RegionRepository regionRepository;
+    private final CategoryRepository categoryRepository;
 
     /**
      * 가맹점 등록
@@ -35,12 +38,16 @@ public class StoreService {
                 request.getName(), request.getAddress(), request.getRegionId())) {
             throw new IllegalArgumentException("이미 존재하는 가맹점입니다.");
         }
+
         Region region = regionRepository.findById(request.getRegionId())
                 .orElseThrow(() -> new IllegalArgumentException("해당 지역이 존재하지 않습니다. ID=" + request.getRegionId()));
 
+        Category category = categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new IllegalArgumentException("해당 카테고리가 존재하지 않습니다. ID=" + request.getCategoryId()));
+
         Store store = Store.builder()
                 .name(request.getName())
-                .category(request.getCategory())
+                .category(category)
                 .region(region)
                 .address(request.getAddress())
                 .latitude(request.getLatitude())
@@ -52,29 +59,29 @@ public class StoreService {
                 .build();
 
         Store saved = storeRepository.save(store);
-        return StoreResponse.fromEntity(saved, null); // distance 없음
+        return StoreResponse.fromEntity(saved, null);
     }
 
     /**
-     * 가맹점 전체 조회 (필터링 지원)
+     * 가맹점 전체 조회 (필터링 지원) - categoryId로 변경
      */
-    public List<StoreResponse> getStores(Long regionId, String category, String name, Double latitude, Double longitude) {
+    public List<StoreResponse> getStores(Long regionId, Long categoryId, String name, Double latitude, Double longitude) {
         List<Store> stores;
 
-        if (regionId != null && category != null && name != null) {
-            stores = storeRepository.findByRegionIdAndCategoryAndNameContaining(regionId, category, name);
-        } else if (regionId != null && category != null) {
-            stores = storeRepository.findByRegionIdAndCategory(regionId, category);
+        if (regionId != null && categoryId != null && name != null) {
+            stores = storeRepository.findByRegionIdAndCategoryIdAndNameContaining(regionId, categoryId, name);
+        } else if (regionId != null && categoryId != null) {
+            stores = storeRepository.findByRegionIdAndCategoryId(regionId, categoryId);
         } else if (regionId != null && name != null) {
             stores = storeRepository.findByRegionIdAndNameContaining(regionId, name);
-        } else if (category != null && name != null) {
-            stores = storeRepository.findByCategoryAndNameContaining(category, name);
+        } else if (categoryId != null && name != null) {
+            stores = storeRepository.findByCategoryIdAndNameContaining(categoryId, name);
         } else if (name != null) {
             stores = storeRepository.findByNameContaining(name);
         } else if (regionId != null) {
             stores = storeRepository.findByRegionId(regionId);
-        } else if (category != null) {
-            stores = storeRepository.findByCategory(category);
+        } else if (categoryId != null) {
+            stores = storeRepository.findByCategoryId(categoryId);
         } else {
             stores = storeRepository.findAll();
         }
@@ -95,7 +102,7 @@ public class StoreService {
     public StoreResponse getStoreById(Long id) {
         Store store = storeRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("가맹점이 존재하지 않습니다. ID=" + id));
-        return StoreResponse.fromEntity(store, null); // distance 없음
+        return StoreResponse.fromEntity(store, null);
     }
 
     /**
