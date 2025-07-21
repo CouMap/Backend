@@ -1,7 +1,10 @@
 package backend.coumap.category.domain;
 
+import backend.coumap.store.domain.Store;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.List;
 
 @Entity
 @Getter
@@ -20,4 +23,7 @@ public class Category {
 
     @Column(nullable = false)
     private String name;  // 업종 이름
+
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
+    private List<Store> stores;
 }

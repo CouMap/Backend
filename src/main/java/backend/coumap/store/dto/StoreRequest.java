@@ -7,7 +7,7 @@ import lombok.Setter;
 @Setter
 public class StoreRequest {
     private String name;
-    private String category;
+    private Long categoryId;
     private Long regionId;
     private String address;
     private Double latitude;
