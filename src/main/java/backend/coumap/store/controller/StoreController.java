@@ -1,5 +1,6 @@
 package backend.coumap.store.controller;
 
+import backend.coumap.store.dto.NearbyStoreResponse;
 import backend.coumap.store.dto.StoreRequest;
 import backend.coumap.store.dto.StoreResponse;
 import backend.coumap.store.service.StoreService;
@@ -27,12 +28,14 @@ public class StoreController {
      * 가맹점 전체 조회
      */
     @GetMapping
-    public List<StoreResponse> getStores(
+    public List<StoreResponse> getAllStores(
             @RequestParam(required = false) Long regionId,
             @RequestParam(required = false) String category,
-            @RequestParam(required = false) String name
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) Double latitude,
+            @RequestParam(required = false) Double longitude
     ) {
-        return storeService.getStores(regionId, category, name);
+        return storeService.getStores(regionId, category, name, latitude, longitude);
     }
 
     /**
@@ -47,14 +50,11 @@ public class StoreController {
      * 근처 가맹점 조회
      */
     @GetMapping("/nearby")
-    public List<StoreResponse> getNearbyStores(
-            @RequestParam double lat,
-            @RequestParam double lng,
-            @RequestParam(defaultValue = "500") double radius
-    ) {
-        return storeService.getNearbyStores(lat, lng, radius);
+    public List<NearbyStoreResponse> getNearbyStores(@RequestParam double latitude,
+                                                     @RequestParam double longitude,
+                                                     @RequestParam int radius) {
+        return storeService.getNearbyStores(latitude, longitude, radius);
     }
-
 
     /**
      * 영업중 가맹점 조회

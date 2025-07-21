@@ -7,7 +7,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class StoreResponse {
+public class NearbyStoreResponse {
     private Long id;
     private String name;
     private String category;
@@ -21,8 +21,8 @@ public class StoreResponse {
     private String openingHours;
     private Double distance;
 
-    public static StoreResponse fromEntity(Store store, Double distance) {
-        return StoreResponse.builder()
+    public static NearbyStoreResponse fromEntity(Store store, double distance) {
+        return NearbyStoreResponse.builder()
                 .id(store.getId())
                 .name(store.getName())
                 .category(store.getCategory())

@@ -3,6 +3,7 @@ package backend.coumap.store.service;
 import backend.coumap.region.domain.Region;
 import backend.coumap.region.repository.RegionRepository;
 import backend.coumap.store.domain.Store;
+import backend.coumap.store.dto.NearbyStoreResponse;
 import backend.coumap.store.dto.StoreRequest;
 import backend.coumap.store.dto.StoreResponse;
 import backend.coumap.store.repository.StoreRepository;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -50,13 +52,13 @@ public class StoreService {
                 .build();
 
         Store saved = storeRepository.save(store);
-        return StoreResponse.fromEntity(saved);
+        return StoreResponse.fromEntity(saved, null); // distance 없음
     }
 
     /**
      * 가맹점 전체 조회 (필터링 지원)
      */
-    public List<StoreResponse> getStores(Long regionId, String category, String name) {
+    public List<StoreResponse> getStores(Long regionId, String category, String name, Double latitude, Double longitude) {
         List<Store> stores;
 
         if (regionId != null && category != null && name != null) {
@@ -78,7 +80,12 @@ public class StoreService {
         }
 
         return stores.stream()
-                .map(StoreResponse::fromEntity)
+                .map(store -> {
+                    Double distance = (latitude != null && longitude != null)
+                            ? calculateDistance(latitude, longitude, store.getLatitude(), store.getLongitude())
+                            : null;
+                    return StoreResponse.fromEntity(store, distance);
+                })
                 .collect(Collectors.toList());
     }
 
@@ -88,37 +95,35 @@ public class StoreService {
     public StoreResponse getStoreById(Long id) {
         Store store = storeRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("가맹점이 존재하지 않습니다. ID=" + id));
-        return StoreResponse.fromEntity(store);
+        return StoreResponse.fromEntity(store, null); // distance 없음
     }
 
     /**
      * 근처 가맹점 조회
      */
-    public List<StoreResponse> getNearbyStores(double lat, double lng, double radius) {
-        List<Store> stores = storeRepository.findAll();
-        return stores.stream()
-                .filter(store -> {
-                    // null 체크 추가
-                    if (store.getLatitude() == null || store.getLongitude() == null) {
-                        log.warn("Store ID {} has null coordinates", store.getId());
-                        return false;
+    public List<NearbyStoreResponse> getNearbyStores(double latitude, double longitude, int radius) {
+        return storeRepository.findAll().stream()
+                .map(store -> {
+                    double distance = calculateDistance(latitude, longitude, store.getLatitude(), store.getLongitude());
+                    if (distance <= radius) {
+                        return NearbyStoreResponse.fromEntity(store, distance);
                     }
-                    return distance(lat, lng, store.getLatitude(), store.getLongitude()) <= radius;
+                    return null;
                 })
-                .map(StoreResponse::fromEntity)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
-    private double distance(double lat1, double lon1, double lat2, double lon2) {
-        double φ1 = Math.toRadians(lat1);
-        double φ2 = Math.toRadians(lat2);
-        double Δφ = Math.toRadians(lat2 - lat1);
-        double Δλ = Math.toRadians(lon2 - lon1);
-
-        double a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-                Math.cos(φ1) * Math.cos(φ2) *
-                        Math.sin(Δλ/2) * Math.sin(Δλ/2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    /**
+     * 두 지점 간 거리 계산 (단위: m)
+     */
+    private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+                        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return EARTH_RADIUS_METERS * c;
     }
 
@@ -131,7 +136,7 @@ public class StoreService {
 
         return stores.stream()
                 .filter(store -> isOpen(store.getOpeningHours(), now))
-                .map(StoreResponse::fromEntity)
+                .map(store -> StoreResponse.fromEntity(store, null))
                 .collect(Collectors.toList());
     }
 
@@ -141,7 +146,6 @@ public class StoreService {
         }
 
         try {
-            // "09:00~18:00" 형식 파싱
             if (!openingHours.contains("~")) {
                 return false;
             }
@@ -154,7 +158,6 @@ public class StoreService {
             LocalTime start = LocalTime.parse(parts[0].trim());
             LocalTime end = LocalTime.parse(parts[1].trim());
 
-            // 자정을 넘는 경우 (예: 22:00~02:00)
             if (end.isBefore(start)) {
                 return !now.isBefore(start) || !now.isAfter(end);
             }
