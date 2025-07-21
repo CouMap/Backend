@@ -24,6 +24,7 @@ services:
     environment:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
+      REGION_API_SERVICE_KEY: ${REGION_API_SERVICE_KEY}
     depends_on:
       - db
 

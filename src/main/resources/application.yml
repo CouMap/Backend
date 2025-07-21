@@ -1,4 +1,7 @@
 spring:
+  config:
+    import: optional:file:.env
+
   datasource:
     url: jdbc:mariadb://db:3306/coumap
     username: ${DB_USER}
@@ -19,3 +22,12 @@ spring:
 
 server:
   port: 8080
+
+logging:
+  level:
+    backend.coumap: DEBUG
+    org.springframework.web: DEBUG
+
+region:
+  api:
+    service-key: ${REGION_API_SERVICE_KEY:}
